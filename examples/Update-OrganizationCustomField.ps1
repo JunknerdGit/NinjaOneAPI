@@ -4,11 +4,11 @@
 
 .DESCRIPTION
     Simple script to update organization custom fields using OAuth2 authentication.
-    Reads API credentials from device custom fields and parameters from environment variables.
+    Reads API credentials from custom fields and parameters from environment variables.
 
 .NOTES
     Requires PowerShell 5.1+ and management scope permissions
-    Requires custom fields: ninjaoneClientId, ninjaoneClientSecret
+    Requires custom fields: ninjaoneClientId, ninjaoneClientSecret (any level)
     Requires environment variables: customFieldName, customFieldValue
 #>
 
@@ -25,7 +25,7 @@ $ErrorActionPreference = 'Continue'
 $ApiUrl = "https://api.ninjarmm.com"  # Set your NinjaOne API base URL
 $OrganizationId = 123  # Set your organization ID
 
-# Read API credentials from device custom fields
+# Read API credentials from custom fields
 $ClientId = Ninja-Property-Get ninjaoneClientId
 $ClientSecret = Ninja-Property-Get ninjaoneClientSecret
 
@@ -59,7 +59,7 @@ function Update-CustomField {
 # Main execution
 try {
     if ([string]::IsNullOrEmpty($ClientId) -or [string]::IsNullOrEmpty($ClientSecret)) {
-        throw "Missing API credentials. Ensure custom fields 'ninjaoneClientId' and 'ninjaoneClientSecret' are set on this device."
+        throw "Missing API credentials. Ensure custom fields 'ninjaoneClientId' and 'ninjaoneClientSecret' are set."
     }
     
     if ([string]::IsNullOrEmpty($CustomFieldName) -or [string]::IsNullOrEmpty($CustomFieldValue)) {
@@ -67,7 +67,7 @@ try {
     }
     
     $token = Get-AccessToken
-    Update-CustomField $token
+    Update-CustomField $token | Out-Null
     Write-Host "Updated '$CustomFieldName' to '$CustomFieldValue'" -ForegroundColor Green
 }
 catch {
