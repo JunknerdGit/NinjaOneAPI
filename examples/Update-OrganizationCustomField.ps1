@@ -4,26 +4,19 @@
 
 .DESCRIPTION
     Simple script to update organization custom fields using OAuth2 authentication.
-    Reads API credentials from device custom fields for security.
-
-.PARAMETER CustomFieldName
-    Custom field name
-
-.PARAMETER CustomFieldValue
-    New field value
-
-.EXAMPLE
-    .\Update-OrganizationCustomField.ps1 "Department" "IT"
+    Reads API credentials from device custom fields and parameters from environment variables.
 
 .NOTES
     Requires PowerShell 5.1+ and management scope permissions
     Requires custom fields: ninjaoneClientId, ninjaoneClientSecret
+    Requires environment variables: customFieldName, customFieldValue
 #>
 
-param(
-    [Parameter(Position=0, Mandatory=$true)][string]$CustomFieldName,
-    [Parameter(Position=1, Mandatory=$true)][string]$CustomFieldValue
-)
+param()
+
+# Script variables from environment
+$CustomFieldName = $env:customFieldName
+$CustomFieldValue = $env:customFieldValue
 
 # Configuration
 $ErrorActionPreference = 'Continue'
@@ -67,6 +60,10 @@ function Update-CustomField {
 try {
     if ([string]::IsNullOrEmpty($ClientId) -or [string]::IsNullOrEmpty($ClientSecret)) {
         throw "Missing API credentials. Ensure custom fields 'ninjaoneClientId' and 'ninjaoneClientSecret' are set on this device."
+    }
+    
+    if ([string]::IsNullOrEmpty($CustomFieldName) -or [string]::IsNullOrEmpty($CustomFieldValue)) {
+        throw "Missing required parameters. Set environment variables 'customFieldName' and 'customFieldValue'."
     }
     
     $token = Get-AccessToken
