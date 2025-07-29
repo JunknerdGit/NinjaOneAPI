@@ -1,142 +1,78 @@
 <#
 .SYNOPSIS
-    Updates an organization custom field value via NinjaOne API
+    Updates organization custom field via NinjaOne API
 
 .DESCRIPTION
-    This script updates organization custom field values using the NinjaOne Public API.
-    It uses OAuth2 authentication and handles API requests efficiently.
+    Simple script to update organization custom fields using OAuth2 authentication.
 
 .PARAMETER ApiUrl
-    The base URL for your NinjaOne API instance (e.g., https://api.ninjarmm.com)
+    NinjaOne API base URL (e.g., https://api.ninjarmm.com)
 
 .PARAMETER ClientId
-    OAuth2 Client ID for API authentication
+    OAuth2 Client ID
 
 .PARAMETER ClientSecret
-    OAuth2 Client Secret for API authentication
+    OAuth2 Client Secret
 
 .PARAMETER OrganizationId
-    The ID of the organization to update
+    Organization ID to update
 
 .PARAMETER CustomFieldName
-    The name of the custom field to update
+    Custom field name
 
 .PARAMETER CustomFieldValue
-    The value to set for the custom field
+    New field value
 
 .EXAMPLE
-    .\Update-OrganizationCustomField.ps1 -ApiUrl "https://api.ninjarmm.com" -ClientId "your-client-id" -ClientSecret "your-client-secret" -OrganizationId 123 -CustomFieldName "Department" -CustomFieldValue "IT Operations"
+    .\Update-OrganizationCustomField.ps1 "https://api.ninjarmm.com" "client-id" "client-secret" 123 "Department" "IT"
 
 .NOTES
-    Requires PowerShell 5.1 or later
-    Requires appropriate API permissions (management scope)
+    Requires PowerShell 5.1+ and management scope permissions
 #>
 
-[CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [string]$ApiUrl,
-    
-    [Parameter(Mandatory = $true)]
-    [string]$ClientId,
-    
-    [Parameter(Mandatory = $true)]
-    [string]$ClientSecret,
-    
-    [Parameter(Mandatory = $true)]
-    [int]$OrganizationId,
-    
-    [Parameter(Mandatory = $true)]
-    [string]$CustomFieldName,
-    
-    [Parameter(Mandatory = $true)]
-    [string]$CustomFieldValue
+    [Parameter(Position=0, Mandatory=$true)][string]$ApiUrl,
+    [Parameter(Position=1, Mandatory=$true)][string]$ClientId,
+    [Parameter(Position=2, Mandatory=$true)][string]$ClientSecret,
+    [Parameter(Position=3, Mandatory=$true)][int]$OrganizationId,
+    [Parameter(Position=4, Mandatory=$true)][string]$CustomFieldName,
+    [Parameter(Position=5, Mandatory=$true)][string]$CustomFieldValue
 )
 
-function Get-NinjaOneAccessToken {
-    param(
-        [string]$ApiUrl,
-        [string]$ClientId,
-        [string]$ClientSecret
-    )
+function Get-AccessToken {
+    $body = @{
+        grant_type = "client_credentials"
+        client_id = $ClientId
+        client_secret = $ClientSecret
+        scope = "management"
+    }
     
-    try {
-        $tokenUrl = "$ApiUrl/ws/oauth/token"
-        
-        $body = @{
-            grant_type = "client_credentials"
-            client_id = $ClientId
-            client_secret = $ClientSecret
-            scope = "management"
-        }
-        
-        Write-Host "Requesting access token..."
-        
-        $response = Invoke-RestMethod -Uri $tokenUrl -Method Post -Body $body -ContentType "application/x-www-form-urlencoded"
-        
-        if (-not $response.access_token) {
-            throw "No access token received"
-        }
-        
-        Write-Host "Access token obtained" -ForegroundColor Green
-        return $response.access_token
-    }
-    catch {
-        Write-Error "Failed to obtain access token: $($_.Exception.Message)"
-        throw
-    }
+    $response = Invoke-RestMethod -Uri "$ApiUrl/ws/oauth/token" -Method Post -Body $body -ContentType "application/x-www-form-urlencoded"
+    return $response.access_token
 }
 
-function Update-OrganizationCustomField {
-    param(
-        [string]$ApiUrl,
-        [string]$AccessToken,
-        [int]$OrganizationId,
-        [string]$FieldName,
-        [string]$FieldValue
-    )
+function Update-CustomField {
+    param([string]$Token)
     
-    try {
-        $uri = "$ApiUrl/v2/organization/$OrganizationId/custom-fields"
-        
-        $headers = @{
-            Authorization = "Bearer $AccessToken"
-            "Content-Type" = "application/json"
-            Accept = "application/json"
-        }
-        
-        $body = @{
-            $FieldName = @{
-                value = $FieldValue
-            }
-        } | ConvertTo-Json -Depth 3
-        
-        Write-Host "Updating custom field '$FieldName' to '$FieldValue'..."
-        
-        $response = Invoke-RestMethod -Uri $uri -Method Patch -Headers $headers -Body $body
-        
-        Write-Host "Custom field updated successfully!" -ForegroundColor Green
-        return $response
+    $headers = @{
+        Authorization = "Bearer $Token"
+        "Content-Type" = "application/json"
     }
-    catch {
-        Write-Error "Failed to update custom field: $($_.Exception.Message)"
-        throw
-    }
+    
+    $body = @{
+        $CustomFieldName = @{ value = $CustomFieldValue }
+    } | ConvertTo-Json -Depth 3
+    
+    Invoke-RestMethod -Uri "$ApiUrl/v2/organization/$OrganizationId/custom-fields" -Method Patch -Headers $headers -Body $body
 }
 
 # Main execution
 try {
-    Write-Host "=== NinjaOne Custom Field Update ===" -ForegroundColor Yellow
-    
-    # Get access token
-    $accessToken = Get-NinjaOneAccessToken -ApiUrl $ApiUrl -ClientId $ClientId -ClientSecret $ClientSecret
-    
-    # Update the custom field
-    $result = Update-OrganizationCustomField -ApiUrl $ApiUrl -AccessToken $accessToken -OrganizationId $OrganizationId -FieldName $CustomFieldName -FieldValue $CustomFieldValue
-    
-    Write-Host "Update completed successfully!" -ForegroundColor Green
+    $token = Get-AccessToken
+    Update-CustomField $token
+    Write-Host "Updated '$CustomFieldName' to '$CustomFieldValue'" -ForegroundColor Green
 }
 catch {
-    Write-Host "Update failed: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Error $_.Exception.Message
     exit 1
 }
