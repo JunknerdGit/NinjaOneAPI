@@ -6,34 +6,43 @@ This directory contains example scripts demonstrating how to use the NinjaOne AP
 
 ### Update-OrganizationCustomField.ps1
 
-Updates an organization custom field value via the NinjaOne API.
+Updates an organization custom field value via the NinjaOne API using secure credential handling.
 
 **Usage:**
 ```powershell
-.\Update-OrganizationCustomField.ps1 -ApiUrl "https://api.ninjarmm.com" -ClientId "your-client-id" -ClientSecret "your-client-secret" -OrganizationId 123 -CustomFieldName "Department" -CustomFieldValue "IT Operations"
+# Set environment variables
+$env:customfieldname = "Department"
+$env:customfieldvalue = "IT Operations"
+
+# Run the script
+.\Update-OrganizationCustomField.ps1
 ```
 
-**Parameters:**
-- `ApiUrl` - Your NinjaOne API base URL
-- `ClientId` - OAuth2 Client ID
-- `ClientSecret` - OAuth2 Client Secret  
-- `OrganizationId` - Target organization ID
-- `CustomFieldName` - Name of the custom field to update
-- `CustomFieldValue` - New value for the custom field
+**Configuration:**
+- Set your API URL and Organization ID in the script (lines 19-20)
+- Create custom fields for API credentials: `ninjaoneClientId`, `ninjaoneClientSecret`
+- Set environment variables: `customfieldname`, `customfieldvalue`
 
 **Features:**
+- Secure credential handling via custom fields (any level)
+- Environment variable input for automation
 - OAuth2 authentication with client credentials flow
-- Error handling and detailed logging
-- Retrieves current custom fields for verification
-- Updates organization custom field via PATCH request
+- Clean output with error handling
+- Optimized for minimal code and maximum efficiency
+- No command-line parameters needed
 
 **Requirements:**
 - PowerShell 5.1 or later
 - API client with `management` scope permissions
-- Valid organization ID and custom field name
+- Custom fields: `ninjaoneClientId`, `ninjaoneClientSecret` (device, organization, or global level)
+- Environment variables: `customfieldname`, `customfieldvalue`
+
+**Security:**
+- API credentials stored in custom fields (not in code or command line)
+- No sensitive information exposed in process lists or logs
+- Follows NinjaRMM security best practices
 
 ## API Endpoints Used
 
 - `POST /ws/oauth/token` - OAuth2 token endpoint
-- `GET /v2/organization/{id}/custom-fields` - Get organization custom fields
 - `PATCH /v2/organization/{id}/custom-fields` - Update organization custom fields
