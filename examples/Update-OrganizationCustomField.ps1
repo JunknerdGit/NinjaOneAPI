@@ -15,15 +15,15 @@
 param()
 
 # Script variables from environment
-$CustomFieldName = $env:customFieldName
-$CustomFieldValue = $env:customFieldValue
+$CustomFieldName = $env:customfieldname
+$CustomFieldValue = $env:customfieldvalue
 
 # Configuration
 $ErrorActionPreference = 'Continue'
 
 # NinjaOne API configuration
-$ApiUrl = "https://api.ninjarmm.com"  # Set your NinjaOne API base URL
-$OrganizationId = 123  # Set your organization ID
+$ApiUrl = "https://eu.ninjarmm.com"  # Set your NinjaOne API base URL
+$OrganizationId = "1"  # Set your organization ID
 
 # Read API credentials from custom fields
 $ClientId = Ninja-Property-Get ninjaoneClientId
