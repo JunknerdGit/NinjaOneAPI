@@ -53,7 +53,7 @@ function Update-CustomField {
         $CustomFieldName = @{ value = $CustomFieldValue }
     } | ConvertTo-Json -Depth 3
     
-    Invoke-RestMethod -Uri "$ApiUrl/v2/organization/$OrganizationId/custom-fields" -Method Patch -Headers $headers -Body $body
+    Invoke-RestMethod -Uri "$ApiUrl/v2/organization/$OrganizationId/custom-fields" -Method Patch -Headers $headers -Body $body | Out-Null
 }
 
 # Main execution
@@ -67,7 +67,7 @@ try {
     }
     
     $token = Get-AccessToken
-    Update-CustomField $token | Out-Null
+    Update-CustomField $token
     Write-Host "Updated '$CustomFieldName' to '$CustomFieldValue'" -ForegroundColor Green
 }
 catch {
