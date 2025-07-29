@@ -4,18 +4,7 @@
 
 .DESCRIPTION
     Simple script to update organization custom fields using OAuth2 authentication.
-
-.PARAMETER ApiUrl
-    NinjaOne API base URL (e.g., https://api.ninjarmm.com)
-
-.PARAMETER ClientId
-    OAuth2 Client ID
-
-.PARAMETER ClientSecret
-    OAuth2 Client Secret
-
-.PARAMETER OrganizationId
-    Organization ID to update
+    Reads API credentials from device custom fields for security.
 
 .PARAMETER CustomFieldName
     Custom field name
@@ -24,20 +13,28 @@
     New field value
 
 .EXAMPLE
-    .\Update-OrganizationCustomField.ps1 "https://api.ninjarmm.com" "client-id" "client-secret" 123 "Department" "IT"
+    .\Update-OrganizationCustomField.ps1 "Department" "IT"
 
 .NOTES
     Requires PowerShell 5.1+ and management scope permissions
+    Requires custom fields: ninjaoneClientId, ninjaoneClientSecret
 #>
 
 param(
-    [Parameter(Position=0, Mandatory=$true)][string]$ApiUrl,
-    [Parameter(Position=1, Mandatory=$true)][string]$ClientId,
-    [Parameter(Position=2, Mandatory=$true)][string]$ClientSecret,
-    [Parameter(Position=3, Mandatory=$true)][int]$OrganizationId,
-    [Parameter(Position=4, Mandatory=$true)][string]$CustomFieldName,
-    [Parameter(Position=5, Mandatory=$true)][string]$CustomFieldValue
+    [Parameter(Position=0, Mandatory=$true)][string]$CustomFieldName,
+    [Parameter(Position=1, Mandatory=$true)][string]$CustomFieldValue
 )
+
+# Configuration
+$ErrorActionPreference = 'Continue'
+
+# NinjaOne API configuration
+$ApiUrl = "https://api.ninjarmm.com"  # Set your NinjaOne API base URL
+$OrganizationId = 123  # Set your organization ID
+
+# Read API credentials from device custom fields
+$ClientId = Ninja-Property-Get ninjaoneClientId
+$ClientSecret = Ninja-Property-Get ninjaoneClientSecret
 
 function Get-AccessToken {
     $body = @{
@@ -68,6 +65,10 @@ function Update-CustomField {
 
 # Main execution
 try {
+    if ([string]::IsNullOrEmpty($ClientId) -or [string]::IsNullOrEmpty($ClientSecret)) {
+        throw "Missing API credentials. Ensure custom fields 'ninjaoneClientId' and 'ninjaoneClientSecret' are set on this device."
+    }
+    
     $token = Get-AccessToken
     Update-CustomField $token
     Write-Host "Updated '$CustomFieldName' to '$CustomFieldValue'" -ForegroundColor Green
