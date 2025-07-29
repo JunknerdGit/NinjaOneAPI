@@ -14,60 +14,32 @@
 
 param()
 
-# Script variables from environment
-$CustomFieldName = $env:customfieldname
-$CustomFieldValue = $env:customfieldvalue
-
 # Configuration
 $ErrorActionPreference = 'Continue'
+$ApiUrl = "https://eu.ninjarmm.com"
+$OrganizationId = "1"
 
-# NinjaOne API configuration
-$ApiUrl = "https://eu.ninjarmm.com"  # Set your NinjaOne API base URL
-$OrganizationId = "1"  # Set your organization ID
-
-# Read API credentials from custom fields
-$ClientId = Ninja-Property-Get ninjaoneClientId
-$ClientSecret = Ninja-Property-Get ninjaoneClientSecret
-
-function Get-AccessToken {
-    $body = @{
-        grant_type = "client_credentials"
-        client_id = $ClientId
-        client_secret = $ClientSecret
-        scope = "management"
-    }
-    
-    $response = Invoke-RestMethod -Uri "$ApiUrl/ws/oauth/token" -Method Post -Body $body -ContentType "application/x-www-form-urlencoded"
-    return $response.access_token
-}
-
-function Update-CustomField {
-    param([string]$Token)
-    
-    $headers = @{
-        Authorization = "Bearer $Token"
-        "Content-Type" = "application/json"
-    }
-    
-    $body = @{
-        $CustomFieldName = $CustomFieldValue
-    } | ConvertTo-Json -Depth 2
-    
-    Invoke-RestMethod -Uri "$ApiUrl/v2/organization/$OrganizationId/custom-fields" -Method Patch -Headers $headers -Body $body | Out-Null
-}
+# Get variables
+$CustomFieldName = $env:customfieldname; $CustomFieldValue = $env:customfieldvalue
+$ClientId = Ninja-Property-Get ninjaoneClientId; $ClientSecret = Ninja-Property-Get ninjaoneClientSecret
 
 # Main execution
 try {
-    if ([string]::IsNullOrEmpty($ClientId) -or [string]::IsNullOrEmpty($ClientSecret)) {
-        throw "Missing API credentials. Ensure custom fields 'ninjaoneClientId' and 'ninjaoneClientSecret' are set."
+    # Validation
+    if (!$ClientId -or !$ClientSecret -or !$CustomFieldName -or !$CustomFieldValue) {
+        throw "Missing credentials or parameters. Check custom fields and environment variables."
     }
     
-    if ([string]::IsNullOrEmpty($CustomFieldName) -or [string]::IsNullOrEmpty($CustomFieldValue)) {
-        throw "Missing required parameters. Set environment variables 'customfieldname' and 'customfieldvalue'."
-    }
+    # Get access token
+    $tokenResponse = Invoke-RestMethod -Uri "$ApiUrl/ws/oauth/token" -Method Post -Body @{
+        grant_type = "client_credentials"; client_id = $ClientId; client_secret = $ClientSecret; scope = "management"
+    } -ContentType "application/x-www-form-urlencoded"
     
-    $token = Get-AccessToken
-    Update-CustomField $token
+    # Update custom field
+    Invoke-RestMethod -Uri "$ApiUrl/v2/organization/$OrganizationId/custom-fields" -Method Patch -Headers @{
+        Authorization = "Bearer $($tokenResponse.access_token)"; "Content-Type" = "application/json"
+    } -Body (@{$CustomFieldName = $CustomFieldValue} | ConvertTo-Json) | Out-Null
+    
     Write-Host "Updated '$CustomFieldName' to '$CustomFieldValue'" -ForegroundColor Green
 }
 catch {
