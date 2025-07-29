@@ -9,7 +9,7 @@
 .NOTES
     Requires PowerShell 5.1+ and management scope permissions
     Requires custom fields: ninjaoneClientId, ninjaoneClientSecret (any level)
-    Requires environment variables: customFieldName, customFieldValue
+    Requires environment variables: customfieldname, customfieldvalue
 #>
 
 param()
@@ -50,8 +50,8 @@ function Update-CustomField {
     }
     
     $body = @{
-        $CustomFieldName = @{ value = $CustomFieldValue }
-    } | ConvertTo-Json -Depth 3
+        $CustomFieldName = $CustomFieldValue
+    } | ConvertTo-Json -Depth 2
     
     Invoke-RestMethod -Uri "$ApiUrl/v2/organization/$OrganizationId/custom-fields" -Method Patch -Headers $headers -Body $body | Out-Null
 }
@@ -63,7 +63,7 @@ try {
     }
     
     if ([string]::IsNullOrEmpty($CustomFieldName) -or [string]::IsNullOrEmpty($CustomFieldValue)) {
-        throw "Missing required parameters. Set environment variables 'customFieldName' and 'customFieldValue'."
+        throw "Missing required parameters. Set environment variables 'customfieldname' and 'customfieldvalue'."
     }
     
     $token = Get-AccessToken
